@@ -9,4 +9,7 @@ router.get('/getDashboard', appointmentController.getDashboard);
 //Get today appointment
 router.get('/getTodayAppointment', appointmentController.getAppointmentToday);
 
+//Add new appointment
+router.post('/addAppointment', appointmentController.addAppointment);
+
 export default router;

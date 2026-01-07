@@ -68,6 +68,10 @@ const appointmentController = {
         } catch (err) {
             res.status(err.status).message({ message: err });
         }
+    },
+
+    addAppointment: async (req, res) => {
+        
     }
 };
 

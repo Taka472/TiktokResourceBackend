@@ -26,20 +26,17 @@ const reviewerController = {
 
     getTiktokerName: async (req, res) => {
         try {
+            const reviewers = await Reviewer.find(
+                {},
+                { nickTiktok: 1 }
+            ).sort({ createdAt: -1 });
 
+            res.json(reviewers);
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: "Server error" });
         }
     },
-
-    testParseFollower: async (req, res) => {
-        try {
-            res.status(201).json(req.body);
-        } catch (err) {
-            console.error(err);
-        }
-    }
 }
 
 export default reviewerController;

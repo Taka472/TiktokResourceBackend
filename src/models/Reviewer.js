@@ -13,4 +13,4 @@ const reviewerSchema = mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model("Reviewer", reviewerSchema)
+export default mongoose.model("Reviewer", reviewerSchema);
