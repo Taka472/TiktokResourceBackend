@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const appointmentSchema = mongoose.Schema({
-    reviewer: {
+    reviewerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Reviewer",
         require: true,

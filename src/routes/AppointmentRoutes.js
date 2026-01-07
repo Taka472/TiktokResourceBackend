@@ -12,4 +12,10 @@ router.get('/getTodayAppointment', appointmentController.getAppointmentToday);
 //Add new appointment
 router.post('/addAppointment', appointmentController.addAppointment);
 
+//Get week appointment
+router.get('/getWeekAppointment', appointmentController.getWeekAppointment);
+
+//Update appointment
+router.put("/updateAppointment/:id", appointmentController.updateAppointment);
+
 export default router;

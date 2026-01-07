@@ -19,7 +19,7 @@ const appointmentController = {
 
             const today = await Appointment.find({
                 appointmentDate: { $gte: startOfDay, $lte: endOfDay },
-            }).populate("reviewer", "nickTiktok");
+            }).populate("reviewerId", "nickTiktok");
 
             const weekCount = await Appointment.countDocuments({
                 appointmentDate: { $gte: startOfWeek },
@@ -56,12 +56,12 @@ const appointmentController = {
 
             const today = await Appointment.find({
                 appointmentDate: { $gte: startOfDay, $lte: endOfDay },
-            }).populate("reviewer", "nickTiktok");
+            }).populate("reviewerId", "nickTiktok");
 
             res.json({
                 today: today.map((a) => ({
                     id: a._id,
-                    reviewer: a.reviewer.nickTiktok,
+                    reviewer: a.reviewerId.nickTiktok,
                     datetime: a.appointmentDate
                 })),
             });
@@ -71,8 +71,53 @@ const appointmentController = {
     },
 
     addAppointment: async (req, res) => {
-        
-    }
+        try {
+            const { reviewerId, datetime } = req.body;
+
+            if (!reviewerId) {
+                return res.status(400).json({ message: "Thiếu nick tiktok" });
+            }
+
+            const appointment = await Appointment.create({
+                reviewerId,
+                appointmentDate: datetime
+            })
+            res.status(201).json(appointment);
+        } catch (err) {
+            console.error(err);
+            res.status(err.status).message({ message: err });
+        }
+    },
+
+    getWeekAppointment: async (req, res) => {
+        try {
+            const start = new Date(req.query.start);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 7);
+
+            const appointments = await Appointment.find({
+                appointmentDate: { $gte: start, $lt: end }
+            }).populate("reviewerId", "nickTiktok");
+
+            res.status(200).json(appointments);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    },
+
+    updateAppointment: async (req, res) => {
+        try {
+            const { reviewerId, datetime } = req.body;
+            const appointment = await Appointment.findByIdAndUpdate(
+                req.params.id,
+                { reviewerId, appointmentDate: datetime },
+                { new: true }
+            )
+            res.json(appointment);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    },
 };
 
 export default appointmentController;
