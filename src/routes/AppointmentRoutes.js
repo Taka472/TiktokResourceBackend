@@ -18,4 +18,7 @@ router.get('/getWeekAppointment', appointmentController.getWeekAppointment);
 //Update appointment
 router.put("/updateAppointment/:id", appointmentController.updateAppointment);
 
+//Delete appointment
+router.delete("/deleteAppointment/:id", appointmentController.deleteAppointment);
+
 export default router;

@@ -118,6 +118,22 @@ const appointmentController = {
             res.status(500).json({ message: err.message });
         }
     },
+
+    deleteAppointment: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const appointment = await Appointment.findByIdAndDelete(id);
+
+            if (!appointment) {
+                return res.status(404).json({ message: "No appointment to delete" });
+            }
+
+            res.json({ message: "Delete successfully" });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: err.message });
+        }
+    },
 };
 
 export default appointmentController;
