@@ -19,16 +19,16 @@ const appointmentController = {
 
             const today = await Appointment.find({
                 appointmentDate: { $gte: startOfDay, $lte: endOfDay },
-            }).populate("reviewer", "nickTiktok")
+            }).populate("reviewer", "nickTiktok");
 
             const weekCount = await Appointment.countDocuments({
                 appointmentDate: { $gte: startOfWeek },
-            })
+            });
 
-            const unpaidThisMonth = await Appointment.countDocuments({
-                paymentStatus: false,
+            const paidThisMonth = await Appointment.countDocuments({
+                paymentStatus: true,
                 appointmentDate: { $gte: startOfMonth }
-            })
+            });
 
             res.json({
                 today: today.map((a) => ({
@@ -37,12 +37,38 @@ const appointmentController = {
                     datetime: a.appointmentDate
                 })),
                 weekCount,
-                unpaidThisMonth,
+                paidThisMonth,
             });
         } catch (err) {
-            res.status(500).json({ message: err })
+            res.status(err.status).json({ message: err });
         }
     },
+
+    getAppointmentToday: async(req, res) => {
+        try {
+            const now = new Date();
+
+            const startOfDay = new Date(now);
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const endOfDay = new Date(now);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const today = await Appointment.find({
+                appointmentDate: { $gte: startOfDay, $lte: endOfDay },
+            }).populate("reviewer", "nickTiktok");
+
+            res.json({
+                today: today.map((a) => ({
+                    id: a._id,
+                    reviewer: a.reviewer.nickTiktok,
+                    datetime: a.appointmentDate
+                })),
+            });
+        } catch (err) {
+            res.status(err.status).message({ message: err });
+        }
+    }
 };
 
 export default appointmentController;
