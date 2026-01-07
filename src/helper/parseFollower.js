@@ -1,23 +1,23 @@
 export default function parseFollowers(input) {
-    if (!input) return 0;
+    if (!input || typeof input !== 'string') return null;
 
-    const raw = input.toString().toLowerCase().trim();
+    //Chuẩn hoá
+    let value = input.toLowerCase().replace(/\s+/g, '');
+    let multiplier = 1;
 
-    // chấp nhận cả . và ,
-    const match = raw.match(/^(\d+)(?:[.,](\d+))?\s*(k|tr)?$/);
+    if (value.endsWith('k')) {
+        multiplier = 1000;
+        value = value.slice(0, -1);
+    } else if (value.endsWith('tr')) {
+        multiplier = 1_000_000;
+        value = value.slice(0, -2);
+    }
 
-    if (!match) return 0;
+    //Đổi dấu phẩy → dấu chấm chấm
+    value = value.replace(',', '.');
 
-    const intPart = Number(match[1]);
-    const decimalPart = match[2] ? Number(match[2]) : 0;
-    const decimalLength = match[2]?.length || 0;
+    const number = Number(value);
+    if (Number.isNaN(number)) return null;
 
-    let value =
-        intPart +
-        (decimalPart / Math.pow(10, decimalLength));
-
-    if (match[3] === "k") return Math.round(value * 1000);
-    if (match[3] === "tr") return Math.round(value * 1_000_000);
-
-    return Math.round(value);
+    return number * multiplier;
 }

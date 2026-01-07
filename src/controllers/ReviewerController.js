@@ -23,6 +23,23 @@ const reviewerController = {
             res.status(500).json({ message: "Server error" });
         }
     },
+
+    getTiktokerName: async (req, res) => {
+        try {
+
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: "Server error" });
+        }
+    },
+
+    testParseFollower: async (req, res) => {
+        try {
+            res.status(201).json(req.body);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 }
 
 export default reviewerController;
