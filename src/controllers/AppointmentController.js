@@ -1,15 +1,11 @@
+import getStartEndOfTodayVN from "../helper/formatVNDate.js";
 import Appointment from "../models/Appointment.js";
 
 const appointmentController = {
     getDashboard: async (req, res) => {
         try {
             const now = new Date();
-
-            const startOfDay = new Date(now);
-            startOfDay.setHours(0, 0, 0, 0);
-            
-            const endOfDay = new Date(now);
-            endOfDay.setHours(23, 59, 59, 999);
+            const { startOfDay, endOfDay } = getStartEndOfTodayVN()
 
             const startOfWeek = new Date(now);
             startOfWeek.setDate(now.getDate() - now.getDay() + 1);
