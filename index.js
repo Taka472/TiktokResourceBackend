@@ -1,8 +1,9 @@
 import express from 'express';
-import ConfigServer from './config/serverConfig.js';
-import appointmentRouter from './routes/AppointmentRoutes.js';
-import reviewerRouter from './routes/ReviewerRoutes.js';
-import ConnectDatabase from './database/connectDatabase.js';
+import ConfigServer from './api/config/serverConfig.js';
+import appointmentRouter from './api/routes/AppointmentRoutes.js';
+import reviewerRouter from './api/routes/ReviewerRoutes.js';
+import ConnectDatabase from './api/database/connectDatabase.js';
+import "./bin/www";
 
 const app = express();
 const port = 5000;
