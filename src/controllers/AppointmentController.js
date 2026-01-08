@@ -33,14 +33,14 @@ const appointmentController = {
             res.json({
                 today: today.map((a) => ({
                     id: a._id,
-                    reviewer: a.reviewer.nickTiktok,
+                    reviewer: a.reviewerId.nickTiktok,
                     datetime: a.appointmentDate
                 })),
                 weekCount,
                 paidThisMonth,
             });
         } catch (err) {
-            res.status(err.status).json({ message: err });
+            res.status(500).json({ message: err });
         }
     },
 
@@ -66,7 +66,7 @@ const appointmentController = {
                 })),
             });
         } catch (err) {
-            res.status(err.status).message({ message: err });
+            res.status(500).message({ message: err });
         }
     },
 
@@ -85,7 +85,7 @@ const appointmentController = {
             res.status(201).json(appointment);
         } catch (err) {
             console.error(err);
-            res.status(err.status).message({ message: err });
+            res.status(500).message({ message: err });
         }
     },
 
