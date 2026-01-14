@@ -8,8 +8,9 @@ const storage = new CloudinaryStorage({
         folder: "payments",
         allowed_formats: ["jpg", "png", "jepg", "webp"],
         public_id: (req, file) => {
-            return `payment_${Date.now()}`;
-        },
+            const type = req.params.type || "unknown";
+            return `${type}_${Date.now()}`;
+        }
     },
 });
 

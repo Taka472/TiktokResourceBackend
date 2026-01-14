@@ -3,14 +3,14 @@ import Appointment from "../models/Appointment";
 import Payment from "../models/Payment";
 
 const paymentController = {
-    getCanPayAppointment: async (req, res) => {
+    getPaymentDashboard: async (req, res) => {
         try {
-            const startOfTomorrow = getStartOfTomorrowVN();
+            const startOfTomorrowVN = getStartOfTomorrowVN();
 
-            const appointments = await Appointment.agregate([
+            const data = await Appointment.aggregate([
                 {
                     $match: {
-                        appointmentDate: { $gte: startOfTomorrow },
+                        appointmentDate: { $gte: startOfTomorrowVN },
                     },
                 },
                 {
@@ -18,23 +18,38 @@ const paymentController = {
                         from: "payments",
                         localField: "_id",
                         foreignField: "appointment",
-                        as: "payment"
+                        as: "payment",
                     },
                 },
                 {
                     $addFields: {
-                        isPaid: {
-                            $cond: [
-                                { $gt: [{ $size: "$payment" }, 0] },
-                                { $arrayElemAt: ["$payment.paymentStatus", 0] },
-                                false,
-                            ],
-                        },
+                        payment: { $arrayElemAt: ["$payment", 0] },
                     },
                 },
                 {
-                    $match: {
-                        isPaid: false,
+                    $addFields: {
+                        paymentStatus: {
+                            $cond: [
+                                { $eq: ["$payment", null] },
+                                "unpaid",
+                                "$payment.paymentStatus",
+                            ],
+                        },
+                        paymentDate: "$payment.paymentDate",
+                    },
+                },
+                {
+                    $addFields: {
+                        statusOrder: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ["$paymentStatus", "unpaid"] }, then: 0 },
+                                    { case: { $eq: ["$paymentStatus", "pending"] }, then: 1 },
+                                    { case: { $eq: ["$paymentStatus", "verified"] }, then: 2 },
+                                ],
+                                default: 3,
+                            },
+                        },
                     },
                 },
                 {
@@ -48,22 +63,37 @@ const paymentController = {
                 { $unwind: "$reviewer" },
                 {
                     $project: {
+                        appointmentId: "$_id",
                         appointmentDate: 1,
+                        paymentId: "$payment._id",
+                        paymentStatus: 1,
+                        paymentDate: 1,
+                        statusOrder: 1,
                         reviewer: {
+                            _id: "$reviewer._id",
                             nickTiktok: "$reviewer.nickTiktok",
                             followers: "$reviewer.followers",
                         },
+                        deposit: "$payment.deposit",
+                        finalPayment: "$payment.finalPayment",
                     },
                 },
-                { $sort: { appointmentDate: 1 } } 
-            ])
+                {
+                    $sort: {
+                        statusOrder: 1,          
+                        paymentDate: -1,         
+                        appointmentDate: 1,      
+                    },
+                },
+            ]);
 
-            res.status(200).json(appointments);
+            res.status(200).json(data);
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });
         }
     },
+
 
     createPayment: async (req, res) => {
         try {
@@ -79,7 +109,8 @@ const paymentController = {
                 deposit,
                 finalPayment,
                 accountNumber,
-                bankId
+                bankId,
+                paymentStatus: "pending",
             });
 
             res.status(200).json(payment);
@@ -102,7 +133,7 @@ const paymentController = {
             }
 
             payment.paymentImage = req.file.path;
-            payment.paymentStatus = true;
+            payment.paymentStatus = "verified";
             payment.paymentDate = new Date();
 
             await payment.save();
@@ -114,7 +145,32 @@ const paymentController = {
             console.error(err);
             res.status(500).json({ message: err.message });
         }
-    }
+    },
+
+    uploadDepositImage: async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "Thiếu ảnh cọc" });
+            }
+
+            const payment = await Payment.findById(req.params.id);
+            if (!payment) {
+                return res.status(404).json({ message: "Không tìm thấy payment" });
+            }
+
+            payment.depositImage = req.file.path;
+            payment.depositDate = new Date();
+
+            await payment.save();
+            res.status(200).json({
+                message: "Upload ảnh cọc thành công",
+                payment,
+            })
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: err.message });
+        }
+    },
 }
 
 export default paymentController;

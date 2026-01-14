@@ -9,7 +9,7 @@ const appointmentSchema = mongoose.Schema({
     appointmentDate: { type: Date, require: true },
     tiktokPost: String,
     fbIgPost: String,
-    createdAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date, default: Date.now },
 });
 
 appointmentSchema.index({ appointmentDate: 1 });

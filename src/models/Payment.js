@@ -9,12 +9,19 @@ const paymentSchema = mongoose.Schema({
     },
     accountNumber: String,
     bankId: String,
+
     deposit: { type: Number, default: 0 },
+    depositImage: String,
+    depositDate: Date,
+
     finalPayment: { type: Number, default: 0 },
-    paymentStatus: { type: Boolean, default: false },
-    paymentImage: String,
-    paymentDate: Date,
-    createAt: { type: Date, default: Date.now() }
+    finalPaymentImage: String,
+    finalPaymentDate: Date,
+
+    paymentStatus: { type: String, enum: ["pending", "verified"], default: "pending"},
+    createdAt: { type: Date, default: Date.now }
 });
+
+paymentSchema.index({ appointment: 1 });
 
 export default mongoose.model("Payment", paymentSchema);
