@@ -1,5 +1,6 @@
 import getStartEndOfTodayVN from "../helper/formatVNDate.js";
 import Appointment from "../models/Appointment.js";
+import Payment from "../models/Payment.js";
 
 const appointmentController = {
     getDashboard: async (req, res) => {
@@ -118,6 +119,10 @@ const appointmentController = {
     deleteAppointment: async (req, res) => {
         try {
             const { id } = req.params;
+            await Payment.findOneAndDelete({
+                appointment: id,
+            });
+
             const appointment = await Appointment.findByIdAndDelete(id);
 
             if (!appointment) {

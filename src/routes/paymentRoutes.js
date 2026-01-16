@@ -1,6 +1,6 @@
 import { Router } from "express";
-import paymentController from "../controllers/PaymentController";
-import uploadPaymentImage from "../middlewares/uploadPaymentImage";
+import paymentController from "../controllers/PaymentController.js";
+import uploadPaymentImage from "../middlewares/uploadPaymentImage.js";
 
 const router = Router()
 
@@ -15,5 +15,8 @@ router.post("/uploadPaymentImage/:id", uploadPaymentImage.single("image"), payme
 
 //Upload deposite image
 router.post("/uploadDepositPayment/:id", uploadPaymentImage.single("image"), paymentController.uploadDepositImage);
+
+//Delete payment
+router.delete("/deletePayment/:id", paymentController.deletePayment);
 
 export default router;

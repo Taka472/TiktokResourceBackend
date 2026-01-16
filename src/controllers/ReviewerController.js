@@ -41,6 +41,8 @@ const reviewerController = {
 
     getAllReviewer: async (req, res) => {
         try {
+            const now = new Date();
+
             const reviewers = await Reviewer.aggregate([
                 {
                     $lookup: {
@@ -52,16 +54,53 @@ const reviewerController = {
                 },
                 {
                     $addFields: {
-                        hasAppointment: { $gt: [{ $size: "$appointments" }, 0] },
                         latestAppointmentDate: {
                             $max: "$appointments.appointmentDate",
                         },
                     },
                 },
                 {
+                    $addFields: {
+                        groupOrder: {
+                            $cond: {
+                                if: { $eq: ["$latestAppointmentDate", null] },
+                                then: 2, 
+                                else: {
+                                    $cond: {
+                                        if: { $gt: ["$latestAppointmentDate", now] },
+                                        then: 0,
+                                        else: 1,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $addFields: {
+                        hasAppointment: {
+                            $gt: [{ $size: "$appointments" }, 0],
+                        },
+                        latestAppointmentDate: {
+                            $max: "$appointments.appointmentDate",
+                        },
+                    },
+                },
+                {
+                    $addFields: {
+                        sortDate: {
+                            $cond: [
+                                { $eq: ["$groupOrder", 1] },
+                                { $multiply: [-1, { $toLong: "$latestAppointmentDate" }] },
+                                { $toLong: "$latestAppointmentDate" },
+                            ],
+                        },
+                    },
+                },
+                {
                     $sort: {
-                        hasAppointment: 1,              
-                        latestAppointmentDate: -1,         
+                        groupOrder: 1,
+                        sortDate: 1,
                     },
                 },
                 {
@@ -72,7 +111,7 @@ const reviewerController = {
                         contact: 1,
                         name: 1,
                         hasAppointment: 1,
-                        latestAppointmentDate: 1,          
+                        latestAppointmentDate: 1,
                     },
                 },
             ]);
@@ -88,6 +127,7 @@ const reviewerController = {
             res.status(500).json({ message: "Server error" });
         }
     },
+
 
     getReviewerById: async (req, res) => {
         try {

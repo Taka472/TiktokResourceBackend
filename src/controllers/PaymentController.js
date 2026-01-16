@@ -1,18 +1,11 @@
-import getStartOfTomorrowVN from "../helper/getTomorrow";
-import Appointment from "../models/Appointment";
-import Payment from "../models/Payment";
+import getStartOfTomorrowVN from "../helper/getTomorrow.js";
+import Appointment from "../models/Appointment.js";
+import Payment from "../models/Payment.js";
 
 const paymentController = {
     getPaymentDashboard: async (req, res) => {
         try {
-            const startOfTomorrowVN = getStartOfTomorrowVN();
-
             const data = await Appointment.aggregate([
-                {
-                    $match: {
-                        appointmentDate: { $gte: startOfTomorrowVN },
-                    },
-                },
                 {
                     $lookup: {
                         from: "payments",
@@ -94,10 +87,9 @@ const paymentController = {
         }
     },
 
-
     createPayment: async (req, res) => {
         try {
-            const { appointmentId, deposit, finalPayment, accountNumber, bankId } = req.body;
+            const { appointmentId, deposit, finalPayment } = req.body;
 
             const exist = await Payment.findOne({ appointment: appointmentId });
             if (exist) {
@@ -108,9 +100,6 @@ const paymentController = {
                 appointment: appointmentId,
                 deposit,
                 finalPayment,
-                accountNumber,
-                bankId,
-                paymentStatus: "pending",
             });
 
             res.status(200).json(payment);
@@ -169,6 +158,21 @@ const paymentController = {
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });
+        }
+    },
+
+    deletePayment: async (req, res) => {
+        try {
+            const { appointmentId } = req.params;
+
+            await Payment.findOneAndDelete({
+                appointment: appointmentId,
+            });
+
+            res.status(200).json({ message: "Xóa thành công" });
+        } catch (err) {
+            console.error(err);
+            res.json(500).message({ message: err.message });
         }
     },
 }

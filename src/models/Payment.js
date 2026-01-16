@@ -7,21 +7,17 @@ const paymentSchema = mongoose.Schema({
         required: true,
         unique: true,
     },
-    accountNumber: String,
-    bankId: String,
 
     deposit: { type: Number, default: 0 },
-    depositImage: String,
+    depositImage: { type: String, default: "" },
     depositDate: Date,
 
     finalPayment: { type: Number, default: 0 },
-    finalPaymentImage: String,
+    finalPaymentImage: { type: String, default: "" },
     finalPaymentDate: Date,
 
     paymentStatus: { type: String, enum: ["pending", "verified"], default: "pending"},
     createdAt: { type: Date, default: Date.now }
 });
-
-paymentSchema.index({ appointment: 1 });
 
 export default mongoose.model("Payment", paymentSchema);
