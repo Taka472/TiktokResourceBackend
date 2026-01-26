@@ -1,11 +1,27 @@
-import getStartOfTomorrowVN from "../helper/getTomorrow.js";
+import { getMonth } from "../helper/getMonth.js";
 import Appointment from "../models/Appointment.js";
 import Payment from "../models/Payment.js";
 
 const paymentController = {
     getPaymentDashboard: async (req, res) => {
         try {
+            const { time } = req.query;
+            let start = null, end = null;
+
+            if (time) {
+                const [year, month] = time.split("-").map(Number);
+                ({ start, end } = getMonth(year, month));
+            }
+
+            const matchStage = {};
+            if (start && end) {
+                matchStage.appointmentDate = { $gte: start, $lte: end };
+            }
+
             const data = await Appointment.aggregate([
+                {
+                    $match: matchStage,
+                },                
                 {
                     $lookup: {
                         from: "payments",
@@ -69,13 +85,15 @@ const paymentController = {
                         },
                         deposit: "$payment.deposit",
                         finalPayment: "$payment.finalPayment",
+                        depositImage: "$payment.depositImage",
+                        finalPaymentImage: "$payment.finalPaymentImage",
                     },
                 },
                 {
                     $sort: {
-                        statusOrder: 1,          
-                        paymentDate: -1,         
-                        appointmentDate: 1,      
+                        statusOrder: 1,
+                        appointmentDate: -1,          
+                        paymentDate: -1,
                     },
                 },
             ]);
@@ -118,10 +136,10 @@ const paymentController = {
             const payment = await Payment.findById(req.params.id);
 
             if (!payment) {
-                return res.status(404).json({ message: "KHông tìm thấy payment" });
+                return res.status(404).json({ message: "Không tìm thấy payment" });
             }
 
-            payment.paymentImage = req.file.path;
+            payment.finalPaymentImage = req.file.path;
             payment.paymentStatus = "verified";
             payment.paymentDate = new Date();
 
@@ -155,6 +173,48 @@ const paymentController = {
                 message: "Upload ảnh cọc thành công",
                 payment,
             })
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: err.message });
+        }
+    },
+
+    getPaymentById: async (req, res) => {
+        try {
+            const payment = await Payment.findById(res.params.id);
+
+            if (!payment) {
+                return res.status(404).json({ message: "Không có payment" });
+            }
+            res.json(payment);
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ message: err.message });
+        }
+    },
+
+    updatePayment: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { deposit, finalPayment } = req.body;
+
+            const payment = await Payment.findById(id);
+
+            if (!payment) {
+                return res.status(404).json({ message: "Không có payment" });
+            }
+
+            if (deposit !== undefined) {
+                payment.deposit = Number(deposit);
+            }
+
+            if (finalPayment !== undefined) {
+                payment.finalPayment = Number(finalPayment);
+            }
+
+            await payment.save();
+
+            res.status(200).json(payment);
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });

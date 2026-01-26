@@ -16,6 +16,9 @@ router.post("/uploadPaymentImage/:id", uploadPaymentImage.single("image"), payme
 //Upload deposite image
 router.post("/uploadDepositPayment/:id", uploadPaymentImage.single("image"), paymentController.uploadDepositImage);
 
+//Update payment
+router.put("/updatePayment/:id", paymentController.updatePayment);
+
 //Delete payment
 router.delete("/deletePayment/:id", paymentController.deletePayment);
 
