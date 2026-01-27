@@ -141,7 +141,7 @@ const paymentController = {
 
             payment.finalPaymentImage = req.file.path;
             payment.paymentStatus = "verified";
-            payment.paymentDate = new Date();
+            payment.finalPaymentDate = new Date();
 
             await payment.save();
             res.status(200).json({
@@ -173,20 +173,6 @@ const paymentController = {
                 message: "Upload ảnh cọc thành công",
                 payment,
             })
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ message: err.message });
-        }
-    },
-
-    getPaymentById: async (req, res) => {
-        try {
-            const payment = await Payment.findById(res.params.id);
-
-            if (!payment) {
-                return res.status(404).json({ message: "Không có payment" });
-            }
-            res.json(payment);
         } catch (err) {
             console.error(err);
             res.status(500).json({ message: err.message });

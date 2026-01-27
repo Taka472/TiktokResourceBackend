@@ -22,10 +22,36 @@ const appointmentController = {
                 appointmentDate: { $gte: startOfWeek },
             });
 
-            const paidThisMonth = await Appointment.countDocuments({
-                paymentStatus: true,
-                appointmentDate: { $gte: startOfMonth }
-            });
+            const paidThisMonthAgg = await Appointment.aggregate([
+                {
+                    $match: {
+                        appointmentDate: { $gte: startOfMonth },
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "payments",
+                        localField: "_id",
+                        foreignField: "appointment",
+                        as: "payment",
+                    },
+                },
+                {
+                    $addFields: {
+                        payment: { $arrayElemAt: ["$payment", 0] },
+                    },
+                },
+                {
+                    $match: {
+                        "payment.paymentStatus": "verified",
+                    },
+                },
+                {
+                    $count: "count",
+                },
+            ]);
+
+            const paidThisMonth = paidThisMonthAgg[0]?.count || 0;
 
             res.json({
                 today: today.map((a) => ({
