@@ -13,6 +13,7 @@ const appointmentController = {
             startOfWeek.setHours(0, 0, 0, 0);
 
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
             const today = await Appointment.find({
                 appointmentDate: { $gte: startOfDay, $lte: endOfDay },
@@ -53,6 +54,79 @@ const appointmentController = {
 
             const paidThisMonth = paidThisMonthAgg[0]?.count || 0;
 
+            const paidAmountThisMonthAgg = await Appointment.aggregate([
+                // 1️⃣ Chỉ lấy appointment trong tháng (cho deposit)
+                {
+                    $match: {
+                        appointmentDate: { $gte: startOfMonth, $lte: endOfMonth },
+                    },
+                },
+
+                // 2️⃣ Join payment
+                {
+                    $lookup: {
+                        from: "payments",
+                        localField: "_id",
+                        foreignField: "appointment",
+                        as: "payment",
+                    },
+                },
+                {
+                    $addFields: {
+                        payment: { $arrayElemAt: ["$payment", 0] },
+                    },
+                },
+
+                // 3️⃣ Tính tiền
+                {
+                    $project: {
+                        depositAmount: {
+                            $cond: [
+                                { $ne: ["$payment.depositImage", null] },
+                                "$payment.deposit",
+                                0,
+                            ],
+                        },
+                        finalAmount: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$payment.paymentStatus", "verified"] },
+                                        {
+                                            $gte: [
+                                                "$payment.finalPaymentDate",
+                                                startOfMonth,
+                                            ],
+                                        },
+                                        {
+                                            $lte: [
+                                                "$payment.finalPaymentDate",
+                                                endOfMonth,
+                                            ],
+                                        },
+                                    ],
+                                },
+                                "$payment.finalPayment",
+                                0,
+                            ],
+                        },
+                    },
+                },
+
+                // 4️⃣ Cộng tổng
+                {
+                    $group: {
+                        _id: null,
+                        total: {
+                            $sum: { $add: ["$depositAmount", "$finalAmount"] },
+                        },
+                    },
+                },
+            ]);
+
+
+            const totalPaid = paidAmountThisMonthAgg[0]?.total || 0;
+
             res.json({
                 today: today.map((a) => ({
                     id: a._id,
@@ -61,6 +135,7 @@ const appointmentController = {
                 })),
                 weekCount,
                 paidThisMonth,
+                totalPaid
             });
         } catch (err) {
             res.status(500).json({ message: err });
