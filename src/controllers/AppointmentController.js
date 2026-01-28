@@ -118,15 +118,66 @@ const appointmentController = {
             const end = new Date(start);
             end.setDate(start.getDate() + 7);
 
-            const appointments = await Appointment.find({
-                appointmentDate: { $gte: start, $lt: end }
-            }).populate("reviewerId", "nickTiktok");
+            const data = await Appointment.aggregate([
+                {
+                    $match: {
+                        appointmentDate: { $gte: start, $lt: end },
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "payments",
+                        localField: "_id",
+                        foreignField: "appointment",
+                        as: "payment",
+                    },
+                },
+                {
+                    $addFields: {
+                        payment: { $arrayElemAt: ["$payment", 0] },
+                    },
+                },
+                {
+                    $addFields: {
+                        paymentStatus: {
+                            $cond: [
+                                { $eq: ["$payment", null] },
+                                "unpaid",
+                                "$payment.paymentStatus",
+                            ],
+                        },
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "reviewers",
+                        localField: "reviewerId",
+                        foreignField: "_id",
+                        as: "reviewer",
+                    },
+                },
+                { $unwind: "$reviewer" },
+                {
+                    $project: {
+                        appointmentDate: 1,
+                        paymentStatus: 1,
+                        reviewer: {
+                            _id: "$reviewer._id",
+                            nickTiktok: "$reviewer.nickTiktok",
+                        },
+                    },
+                },
+                {
+                    $sort: { appointmentDate: 1 },
+                },
+            ]);
 
-            res.status(200).json(appointments);
+            res.status(200).json(data);
         } catch (err) {
             res.status(500).json({ message: err.message });
         }
     },
+
 
     updateAppointment: async (req, res) => {
         try {
