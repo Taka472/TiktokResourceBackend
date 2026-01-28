@@ -13,15 +13,8 @@ const paymentController = {
                 ({ start, end } = getMonth(year, month));
             }
 
-            const matchStage = {};
-            if (start && end) {
-                matchStage.appointmentDate = { $gte: start, $lte: end };
-            }
-
             const data = await Appointment.aggregate([
-                {
-                    $match: matchStage,
-                },                
+                // 1️⃣ Join payment
                 {
                     $lookup: {
                         from: "payments",
@@ -35,25 +28,44 @@ const paymentController = {
                         payment: { $arrayElemAt: ["$payment", 0] },
                     },
                 },
+
+                // 2️⃣ Chuẩn hóa status & date
                 {
                     $addFields: {
                         paymentStatus: {
-                            $cond: [
-                                { $eq: ["$payment", null] },
-                                "unpaid",
-                                "$payment.paymentStatus",
-                            ],
+                            $ifNull: ["$payment.paymentStatus", "pending"],
                         },
-                        paymentDate: "$payment.paymentDate",
+                        finalPaymentDate: "$payment.finalPaymentDate",
                     },
                 },
+
+                // 3️⃣ Filter theo tháng
+                {
+                    $match: {
+                        $or: [
+                            // ✅ pending + deposit → theo appointmentDate
+                            {
+                                paymentStatus: { $in: ["pending", "deposit"] },
+                                appointmentDate: { $lte: end },
+                            },
+
+                            // ✅ verified → theo finalPaymentDate
+                            {
+                                paymentStatus: "verified",
+                                finalPaymentDate: { $gte: start, $lte: end },
+                            },
+                        ],
+                    },
+                },
+
+                // 4️⃣ Sort logic
                 {
                     $addFields: {
                         statusOrder: {
                             $switch: {
                                 branches: [
-                                    { case: { $eq: ["$paymentStatus", "unpaid"] }, then: 0 },
-                                    { case: { $eq: ["$paymentStatus", "pending"] }, then: 1 },
+                                    { case: { $eq: ["$paymentStatus", "pending"] }, then: 0 },
+                                    { case: { $eq: ["$paymentStatus", "deposit"] }, then: 1 },
                                     { case: { $eq: ["$paymentStatus", "verified"] }, then: 2 },
                                 ],
                                 default: 3,
@@ -61,6 +73,8 @@ const paymentController = {
                         },
                     },
                 },
+                
+                // 5️⃣ Join reviewer
                 {
                     $lookup: {
                         from: "reviewers",
@@ -70,14 +84,15 @@ const paymentController = {
                     },
                 },
                 { $unwind: "$reviewer" },
+
+                // 6️⃣ Output
                 {
                     $project: {
                         appointmentId: "$_id",
                         appointmentDate: 1,
                         paymentId: "$payment._id",
                         paymentStatus: 1,
-                        paymentDate: 1,
-                        statusOrder: 1,
+                        finalPaymentDate: 1,
                         reviewer: {
                             _id: "$reviewer._id",
                             nickTiktok: "$reviewer.nickTiktok",
@@ -87,13 +102,12 @@ const paymentController = {
                         finalPayment: "$payment.finalPayment",
                         depositImage: "$payment.depositImage",
                         finalPaymentImage: "$payment.finalPaymentImage",
+                        statusOrder: 1,
                     },
                 },
                 {
                     $sort: {
                         statusOrder: 1,
-                        appointmentDate: -1,          
-                        paymentDate: -1,
                     },
                 },
             ]);
@@ -165,6 +179,7 @@ const paymentController = {
                 return res.status(404).json({ message: "Không tìm thấy payment" });
             }
 
+            payment.paymentStatus = "deposit";
             payment.depositImage = req.file.path;
             payment.depositDate = new Date();
 
