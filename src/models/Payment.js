@@ -16,7 +16,7 @@ const paymentSchema = mongoose.Schema({
     finalPaymentImage: { type: String, default: "" },
     finalPaymentDate: Date,
 
-    paymentStatus: { type: String, enum: ["pending", "verified"], default: "pending"},
+    paymentStatus: { type: String, enum: ["pending", "verified", "deposit"], default: "pending"},
     createdAt: { type: Date, default: Date.now }
 });
 
