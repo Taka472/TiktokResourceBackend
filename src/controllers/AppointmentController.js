@@ -25,6 +25,21 @@ const appointmentController = {
 
             const paidThisMonthAgg = await Appointment.aggregate([
                 {
+                    $lookup: {
+                        from: "payments",
+                        localField: "_id",
+                        foreignField: "appointment",
+                        as: "payment",
+                    }
+                },
+                {
+                    $addFields: {
+                        payment: {
+                            $arrayElemAt: ["$payment", 0]
+                        }
+                    }
+                },
+                {
                     $match: {
                         appointmentDate: { $gte: startOfMonth },
                     },
@@ -44,7 +59,7 @@ const appointmentController = {
                 },
                 {
                     $match: {
-                        "payment.paymentStatus": "verified",
+                        "payment.paymentStatus": {$in: ["verified", "deposit"]},
                     },
                 },
                 {
@@ -55,25 +70,27 @@ const appointmentController = {
             const paidThisMonth = paidThisMonthAgg[0]?.count || 0;
 
             const paidAmountThisMonthAgg = await Appointment.aggregate([
-                // 1️⃣ Chỉ lấy appointment trong tháng (cho deposit)
-                {
-                    $match: {
-                        appointmentDate: { $gte: startOfMonth, $lte: endOfMonth },
-                    },
-                },
-
-                // 2️⃣ Join payment
                 {
                     $lookup: {
                         from: "payments",
                         localField: "_id",
                         foreignField: "appointment",
                         as: "payment",
-                    },
+                    }
                 },
                 {
                     $addFields: {
-                        payment: { $arrayElemAt: ["$payment", 0] },
+                        payment: {
+                            $arrayElemAt: ["$payment", 0]
+                        }
+                    }
+                },
+                {
+                    $match: {
+                        $or: [
+                            {appointmentDate: { $gte: startOfMonth }},
+                            {"payment.finalPaymentDate": { $gte: startOfMonth, $lte: endOfMonth }},
+                        ]
                     },
                 },
 

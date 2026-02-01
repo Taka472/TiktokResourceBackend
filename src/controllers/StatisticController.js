@@ -43,8 +43,17 @@ export const statisticController = {
                 {
                     $match: 
                         {
-                            "payment.paymentStatus": "verified",
-                            "payment.finalPaymentDate": { $gte: start, $lte: end },
+                            $or:
+                            [
+                                {
+                                    "payment.paymentStatus": "verified",
+                                    "payment.finalPaymentDate": { $gte: start, $lte: end },
+                                },
+                                {
+                                    "payment.paymentStatus": "deposit",
+                                    "appointmentDate": { $gte: start, $lte: end },
+                                },
+                            ]
                         },
                 },
                 {
